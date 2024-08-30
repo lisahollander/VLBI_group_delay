@@ -1,10 +1,10 @@
 import typer
 from source_model import SourceModel
 from gui import *
-from tools import Header, model_several_sources, set_logger, check_if_test_source
+from tools import model_several_sources, set_logger
+from read_file import FileData, check_if_test_source
 from constants import help_real, help_directory
 from plot import get_plot_dictionaries,plot_results
-from clean import * 
 import tkinter as tk
 
 def main(source_path: str = typer.Option(None, '-r', clamp=True, help=help_real),
@@ -14,14 +14,14 @@ def main(source_path: str = typer.Option(None, '-r', clamp=True, help=help_real)
         set_logger(log_path='QuasarModelLog', console=True)
         source_path = check_if_test_source(source_path)
 
-        header = Header()
-        image, _ = header.get_image_from_path_2(source_path)
+        file_data = FileData()
+        image = file_data.get_image_from_path(source_path)
 
         source = SourceModel()
 
-        org, mdl, anl, mdl2, anl2, anlDerivative,residuals, _= source.process(image,header)
+        org, mdl, anl, mdl2, anl2, anlDerivative,residuals, _= source.process(image,file_data)
 
-        plot_dict = get_plot_dictionaries(header, org, mdl2, anl2, anlDerivative,residuals)
+        plot_dict = get_plot_dictionaries(file_data, org, mdl2, anl2, anlDerivative,residuals)
         
         plot_results(plot_dict)
 

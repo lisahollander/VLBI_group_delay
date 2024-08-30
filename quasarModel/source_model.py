@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.fft import fft2, fftshift
 import matplotlib.pyplot as plt
-from numpy import log, where, amax, exp, sqrt, cos, sin
+from numpy import log, amax, exp, sqrt
 from skimage.feature import peak_local_max
 from gauss import Gaussian, GaussList
 import copy
@@ -14,16 +14,16 @@ from constants import stars, line
 class SourceModel:
     stop: bool = False
 
-    def process(self,image,header):
+    def process(self,image,file_data):
         """
         Model a quasar image with gaussian functions.
         :param image: np.array of image data
-        :param header: object containig data from fits file header, RA/DEC grid and u/v grid
+        :param file_data: object containig data from fits file header, RA/DEC grid and u/v grid
         :return: org - original input image, mdl - modelled image, anl - analytical fourier transform of modelled image
         """
         logger = logging.getLogger('QuasarModelLog')
 
-        size = header.size
+        size = file_data.size
 
         org = copy.deepcopy(image)       #Creates copy of source image array
 
@@ -47,13 +47,13 @@ class SourceModel:
             mean_sq_dof = self.find_mean_sq(image, gauss_now)                                             
             mean_sq_dof_old = mean_sq_dof
             #Adds initial guess to logger
-            self.log_initial_guess(logger, num_peaks, mean_sq_dof, guess, gauss_now,header)                         
+            self.log_initial_guess(logger, num_peaks, mean_sq_dof, guess, gauss_now,file_data)                         
 
             gauss_now, mean_sq_dof, point_min = self.model_fitting(gauss_now, image)
             delta_mean = mean_sq_dof_old - mean_sq_dof
             mean_sq_dof_old = mean_sq_dof
 
-            self.log_iteration(logger, mean_sq_dof, delta_mean, point_min, 1, gauss_now,header)
+            self.log_iteration(logger, mean_sq_dof, delta_mean, point_min, 1, gauss_now,file_data)
 
             for iteration in range(2, 12):
                 if self.stop:
@@ -68,20 +68,20 @@ class SourceModel:
                     gauss_now, mean_sq_dof, point_min = self.model_fitting(gauss_now, image)
                     delta_mean = mean_sq_dof_old - mean_sq_dof
                     mean_sq_dof_old = mean_sq_dof
-                    self.log_iteration(logger, mean_sq_dof, delta_mean, point_min, iteration, gauss_now,header)
+                    self.log_iteration(logger, mean_sq_dof, delta_mean, point_min, iteration, gauss_now,file_data)
 
         mdl = gauss_fnd.build_image()               #Brightness distribution using fitted Gaussians
-        mdl2 = gauss_fnd.build_image_2(header)      #Brightness distribution using scaled Gaussians
+        mdl2 = gauss_fnd.build_image_2(file_data)      #Brightness distribution using scaled Gaussians
 
-        self.log_final_iteration(logger, gauss_fnd,header)
+        self.log_final_iteration(logger, gauss_fnd,file_data)
         precision = self.precision(org, mdl)
 
         anl = sum([np.fromfunction(lambda x, y: gauss.get_fourier_transform_value(x, y, size),
                                        (size, size), dtype=float) for gauss in gauss_fnd])
         
-        anl2, anlDerivative = gauss_fnd.get_analytical_results(header.u,header.v,gauss_fnd,header)
+        anl2, anlDerivative = gauss_fnd.get_analytical_results(gauss_fnd,file_data)
 
-        residuals, rms_value = self.calculate_group_delay_rms(header, anlDerivative)
+        residuals, rms_value = self.calculate_group_delay_rms(file_data, anlDerivative)
 
         logger.info(f"mean error: {precision['mean error']}")
         logger.info(f"mean error as % of max val: {precision['mean error as % of max val']}")
@@ -152,9 +152,9 @@ class SourceModel:
     def initial_guess(self, x0, y0, image):
         gauss_now = Gaussian()
         gauss_now.theta = 0
-        gauss_now.amp = image[y0][x0]                      #Tuss and ludvig see x as row and y as column 
-        gauss_now.x0 = x0                                  #These are pixel values, not a offset from origin of image bottom left corner
-        gauss_now.y0 = y0                                  #These are pixel values, not a offset from origin of image bottom left corner
+        gauss_now.amp = image[y0][x0]                      
+        gauss_now.x0 = x0                                  #These are pixel values, offset from origin of image bottom left corner
+        gauss_now.y0 = y0                                  #These are pixel values, offset from origin of image bottom left corner
         a_nominator = image[gauss_now.y0][gauss_now.x0 + 1] + image[gauss_now.y0][gauss_now.x0 - 1]
         b_nominator = image[gauss_now.y0 + 1][gauss_now.x0] + image[gauss_now.y0 - 1][gauss_now.x0]
 
@@ -239,14 +239,10 @@ class SourceModel:
         residuals = anlDerivative*scale_factor_residual - fitted_plane*scale_factor_residual
 
         #Extracting baselines smaller than radius of earth
-        distance = np.sqrt((header.u - header.reference_pixel_RA) ** 2 + (header.v - header.reference_pixel_DEC) ** 2)
+        distance = sqrt((header.u - header.reference_pixel_RA) ** 2 + (header.v - header.reference_pixel_DEC) ** 2)
         mask = distance <= header.v[-1,0]
 
-        rms_value = np.sqrt(np.mean(np.square(residuals[mask])))    #Calculating rms-error for baslines smaller than radius of earth
-
-        #Remove to plot Group Delay and fitted plane
-        #range_residual = [None, None]                              
-        #Plot3D(header.u,header.v,anlDerivative,fitted_plane)       
+        rms_value = sqrt(np.mean(np.square(residuals[mask])))    #Calculating rms-error for baslines smaller than radius of earth
 
         return residuals, rms_value
 

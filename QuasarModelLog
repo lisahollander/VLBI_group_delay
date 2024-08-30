@@ -1,0 +1,248 @@
+Initial Guess #1 
+
+Mean_sq_DOF: 1               #Found peaks: 6.828861201939073e-05 
+
+#              Amplitude      X0             Y0             Sigma_X        Sigma_Y        Rotation       
+
+0              0.29545000195503235255            257            5.44           15.33          0.0
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #1 
+
+Mean_sq_DOF: 4.40063e-05     Delta_mean: 2.42823e-05    Point: 0.36832         #Found peaks: 1 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.28457        255.1          256.75         5.99           19.58          169.09
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #2 
+
+Mean_sq_DOF: 0.0002326422    Delta_mean: -0.0001886359  Point: 0.74131         #Found peaks: 1 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.26348        255.18         256.51         5.5            27.7           161.51
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #3 
+
+Mean_sq_DOF: 1.0189e-05      Delta_mean: 0.0002224532   Point: 0.35054         #Found peaks: 1 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.26641        255.15         256.44         5.49           35.5           164.0
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #4 
+
+Mean_sq_DOF: 2.6922e-06      Delta_mean: 7.4968e-06     Point: 0.45347         #Found peaks: 1 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.27849        255.12         256.35         5.38           42.17          164.78
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #5 
+
+Mean_sq_DOF: 8.983e-07       Delta_mean: 1.7939e-06     Point: 0.67007         #Found peaks: 1 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.29715        255.1          256.27         5.29           45.84          165.01
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #6 
+
+Mean_sq_DOF: 8.619e-07       Delta_mean: 3.64e-08       Point: 0.98905         #Found peaks: 1 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.29453        255.08         256.22         5.26           46.88          165.06
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #7 
+
+Mean_sq_DOF: 8.619e-07       Delta_mean: 0.0            Point: 1.01165         #Found peaks: 1 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.29454        255.08         256.22         5.26           46.87          165.06
+
+-----------------------------------------------------------------------------------------------
+
+*********************************************FINAL*********************************************
+
+Found components: 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+0              0.29454        255.08         256.22         5.26           46.87          165.06
+
+mean error: 1.8132476044988996e-06
+mean error as % of max val: 0.0006137166448416953
+total error: 0.47533198003375954
+total error as % of max val: 160.88213614538137
+RMS-error for group delay for baselines smaller than earth radius: 4.51361265459297e-13
+/Users/lisavind/Documents/GitHub/VLBI_group_delay/quasarModel/fits/fits_files/J0004-4736/J0004-4736_S_2017_07_17_pet_map.fits ok
+Initial Guess #1 
+
+Mean_sq_DOF: 2               #Found peaks: 4.764094831377987e-05 
+
+#              Amplitude      X0             Y0             Sigma_X        Sigma_Y        Rotation       
+
+0              0.21288999915122986255            255            5.14           14.63          0.0
+
+1              0.21270999312400818256            259            5.11           14.37          0.0
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #1 
+
+Mean_sq_DOF: 3.90201e-05     Delta_mean: 8.6208e-06     Point: 0.3079          #Found peaks: 2 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.20634        254.97         255.11         5.66           18.34          171.01
+
+1              0.20616        255.95         258.88         5.62           18.16          170.91
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #2 
+
+Mean_sq_DOF: 0.0007617284    Delta_mean: -0.0007227083  Point: 0.62895         #Found peaks: 2 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.19336        254.95         255.3          5.53           25.93          162.12
+
+1              0.19319        255.77         258.35         5.51           25.68          162.12
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #3 
+
+Mean_sq_DOF: 2.80587e-05     Delta_mean: 0.0007336697   Point: 0.18897         #Found peaks: 2 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.19304        254.95         255.34         5.49           30.0           163.45
+
+1              0.19271        255.68         258.07         5.47           29.8           163.45
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #4 
+
+Mean_sq_DOF: 3.12242e-05     Delta_mean: -3.1655e-06    Point: 0.26583         #Found peaks: 2 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.19447        254.97         255.42         5.41           35.63          164.44
+
+1              0.19404        255.55         257.64         5.39           35.54          164.45
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #5 
+
+Mean_sq_DOF: 3.72694e-05     Delta_mean: -6.0452e-06    Point: 0.21224         #Found peaks: 2 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.1986         254.98         255.48         5.35           38.69          164.76
+
+1              0.19816        255.46         257.3          5.34           38.65          164.76
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #6 
+
+Mean_sq_DOF: 3.66552e-05     Delta_mean: 6.142e-07      Point: -0.02675        #Found peaks: 2 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.19834        254.98         255.47         5.36           38.43          164.74
+
+1              0.19763        255.47         257.34         5.35           38.38          164.74
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #7 
+
+Mean_sq_DOF: 3.67017e-05     Delta_mean: -4.65e-08      Point: 0.00201         #Found peaks: 2 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.19836        254.98         255.47         5.36           38.45          164.74
+
+1              0.19767        255.47         257.34         5.35           38.4           164.74
+
+-----------------------------------------------------------------------------------------------
+
+Iteration #8 
+
+Mean_sq_DOF: 3.6698e-05      Delta_mean: 3.7e-09        Point: -0.00016        #Found peaks: 2 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+Found components: 
+
+0              0.19836        254.98         255.47         5.36           38.45          164.74
+
+1              0.19767        255.47         257.34         5.35           38.4           164.74
+
+-----------------------------------------------------------------------------------------------
+
+*********************************************FINAL*********************************************
+
+Found components: 
+
+#              Amplitude      X0             Y0             a              b              Rotation       
+
+0              0.19836        254.98         255.47         5.36           38.45          164.74
+
+1              0.19767        255.47         257.34         5.35           38.4           164.74
+
+mean error: 1.1831817353227175e-05
+mean error as % of max val: 0.005557601220223917
+total error: 3.1016399282443845
+total error as % of max val: 1456.8918142743785
+RMS-error for group delay for baselines smaller than earth radius: 0.7414675542381435
+/Users/lisavind/Documents/GitHub/VLBI_group_delay/quasarModel/fits/fits_files/J0004-4736/J0004-4736_X_2017_07_17_pet_map.fits ok
