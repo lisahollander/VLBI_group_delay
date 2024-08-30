@@ -19,9 +19,9 @@ def main(source_path: str = typer.Option(None, '-r', clamp=True, help=help_real)
 
         source = SourceModel()
 
-        org, mdl, anl, mdl2, anl2, anlDerivative,residuals, _= source.process(image,file_data)
+        org, mdl, anl, anlDerivative,residuals,_= source.process(image,file_data)
 
-        plot_dict = get_plot_dictionaries(file_data, org, mdl2, anl2, anlDerivative,residuals)
+        plot_dict = get_plot_dictionaries(file_data, org, mdl, anl, anlDerivative,residuals)
         
         plot_results(plot_dict)
 

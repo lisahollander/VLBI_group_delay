@@ -13,7 +13,7 @@ import numpy as np
 import logging
 
 from read_file import FileData
-from source_model import SourceModel, SourceModelAnalytical
+from source_model import SourceModel
 from plot import get_plot_dictionaries_gui
 
 
@@ -161,9 +161,9 @@ class GUI(tk.Frame):
             image = file_data.get_image_from_path(filePath) 
                 
             source = SourceModel()
-            org, mdl, anl, mdl2, anl2, anlDerivative,residuals,_ = source.process(image,file_data)
+            org, mdl, anl, anlDerivative,residuals,_ = source.process(image,file_data)
 
-            self.plot_dict_mdl, self.plot_dict_anl = get_plot_dictionaries_gui(file_data, org, mdl2, anl2, anlDerivative,residuals)
+            self.plot_dict_mdl, self.plot_dict_anl = get_plot_dictionaries_gui(file_data, org, mdl, anl, anlDerivative,residuals)
 
             self.logger.info("Analysis completed successfully.")
             self.logger.info("Figures generated and displayed.")
@@ -185,9 +185,9 @@ class GUI(tk.Frame):
         if not plot_dict or not plot_dict['data']:
             return
     
-        self.f.clf()                            #Clear current figure
-        num_images = len(plot_dict['data'])     #Number of images 
-        num_cols = 2                            # Fixed number of columns (2)
+        self.f.clf()                                        # Clear current figure
+        num_images = len(plot_dict['data'])                 # Number of images 
+        num_cols = 2                                        # Fixed number of columns (2)
         num_rows = (num_images + num_cols - 1) // num_cols  # Number of rows based on total images
 
         axes = self.f.subplots(num_rows, num_cols)

@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.fft import fft2, fftshift
 import matplotlib.pyplot as plt
 from numpy import log, amax, exp, sqrt
 from skimage.feature import peak_local_max
@@ -46,8 +45,8 @@ class SourceModel:
             
             mean_sq_dof = self.find_mean_sq(image, gauss_now)                                             
             mean_sq_dof_old = mean_sq_dof
-            #Adds initial guess to logger
-            self.log_initial_guess(logger, num_peaks, mean_sq_dof, guess, gauss_now,file_data)                         
+        
+            self.log_initial_guess(logger, num_peaks, mean_sq_dof, guess, gauss_now,file_data)              #Adds initial guess to logger                       
 
             gauss_now, mean_sq_dof, point_min = self.model_fitting(gauss_now, image)
             delta_mean = mean_sq_dof_old - mean_sq_dof
@@ -61,7 +60,7 @@ class SourceModel:
 
                 if point_min == 0 or abs(delta_mean) < 10 ** (-8) or iteration == 11:
                     gauss_fnd.append(gauss_now)
-                    image_comp = gauss_fnd.build_image()
+                    image_comp = gauss_fnd.build_image()                    #Brightness distribution using image coordinate system
                     image = image - image_comp
                     break
                 else:
@@ -70,16 +69,13 @@ class SourceModel:
                     mean_sq_dof_old = mean_sq_dof
                     self.log_iteration(logger, mean_sq_dof, delta_mean, point_min, iteration, gauss_now,file_data)
 
-        mdl = gauss_fnd.build_image()               #Brightness distribution using fitted Gaussians
-        mdl2 = gauss_fnd.build_image_2(file_data)      #Brightness distribution using scaled Gaussians
+        mdl_fitted = gauss_fnd.build_image()
+        precision = self.precision(org, mdl_fitted)
 
+        mdl = gauss_fnd.build_image_scaled(file_data)                        #Brightness distribution using physical coordinate system and scaled Gaussians
         self.log_final_iteration(logger, gauss_fnd,file_data)
-        precision = self.precision(org, mdl)
 
-        anl = sum([np.fromfunction(lambda x, y: gauss.get_fourier_transform_value(x, y, size),
-                                       (size, size), dtype=float) for gauss in gauss_fnd])
-        
-        anl2, anlDerivative = gauss_fnd.get_analytical_results(gauss_fnd,file_data)
+        anl, anlDerivative = gauss_fnd.get_analytical_results(gauss_fnd,file_data)     
 
         residuals, rms_value = self.calculate_group_delay_rms(file_data, anlDerivative)
 
@@ -87,10 +83,9 @@ class SourceModel:
         logger.info(f"mean error as % of max val: {precision['mean error as % of max val']}")
         logger.info(f"total error: {precision['total error']}")
         logger.info(f"total error as % of max val: {precision['total error as % of max val']}")
-        #logger.info(f"mean error for fft: {precision['mean error for fft']}")
         logger.info(f"RMS-error for group delay for baselines smaller than earth radius: {rms_value}")
   
-        return org, mdl, anl, mdl2, anl2, anlDerivative,residuals,gauss_fnd
+        return org, mdl, anl, anlDerivative,residuals,gauss_fnd
     
     def model_fitting(self, gauss_now, image):
         """Use least squares to find the optimal direction for the next guess.."""
@@ -257,14 +252,10 @@ class SourceModel:
         """
         mean_sq = np.sum(np.sum(np.power(np.subtract(img_data, mdl_data), 2)))
         num_points = img_data.shape[0] ** 2
-        fft_img_data = abs(fftshift(fft2(img_data)))
-        fft_mdl_data = abs(fftshift(fft2(mdl_data)))
-        mean_sq_fft = np.sum(np.sum(np.power(np.subtract(fft_img_data, fft_mdl_data), 2)))
 
         precisions = {'mean error': sqrt(mean_sq) / num_points, 'mean error as % of max val':
             (sqrt(mean_sq) / num_points) / amax(img_data) * 100, 'total error': sqrt(mean_sq),
-                      'total error as % of max val': sqrt(mean_sq) / amax(img_data) * 100,
-                      'mean error for fft': sqrt(mean_sq_fft) / num_points}
+                      'total error as % of max val': sqrt(mean_sq) / amax(img_data) * 100}
 
         return precisions
 
@@ -307,9 +298,6 @@ class SourceModel:
         logger.info(f"{'#':<15}{'Amplitude':<15}{'X0':<15}{'Y0':<15}{'Sigma_X':<15}{'Sigma_Y':<15}"
                     f"{'Rotation':<15}\n")
         for index,gauss in enumerate(gauss_now):
-            #gauss_temp = [gauss.amp,(gauss.x0 - header.reference_pixel_RA) * header.pixel_increment_RA,(gauss.y0 - header.reference_pixel_DEC) * header.pixel_increment_DEC ,gauss.a/header.pixel_increment_RA**2, gauss.b/header.pixel_increment_RA**2, gauss.theta]
-            #formatted_values = "\t".join(f"{value:<15.3e}" if (isinstance(value, float) and (abs(value) < 1e-2 or abs(value) >= 1e6)) else f"{value:<15.3f}"for value in gauss_temp)            
-            #logger.info(f"{index:<15}{formatted_values}")
             logger.info(f"{index:<15}{str(gauss)}")
         logger.info(f'{line}\n')
 
@@ -321,9 +309,6 @@ class SourceModel:
                      f"{'Rotation':<15}\n")
         logger.info("Found components: \n")
         for index, gauss in enumerate(gauss_now):
-            #gauss_temp = [gauss.amp,(gauss.x0 - header.reference_pixel_RA) * header.pixel_increment_RA,(gauss.y0 - header.reference_pixel_DEC) * header.pixel_increment_DEC ,gauss.a/header.pixel_increment_RA**2, gauss.b/header.pixel_increment_RA**2, gauss.theta]
-            #formatted_values = "\t".join(f"{value:<15.3e}" if (isinstance(value, float) and (abs(value) < 1e-2 or abs(value) >= 1e6)) else f"{value:<15.3f}"for value in gauss_temp)            
-            #logger.info(f"{index:<15}{formatted_values}")
             logger.info(f"{index:<15}{str(gauss)}")
         logger.info(f'{line}\n')
 
@@ -335,25 +320,13 @@ class SourceModel:
                      f"{'Rotation':<15}\n")
 
         for index, gauss in enumerate(gauss_fnd):
-            #gauss_temp = [gauss.amp,(gauss.x0 - header.reference_pixel_RA) * header.pixel_increment_RA,(gauss.y0 - header.reference_pixel_DEC) * header.pixel_increment_DEC ,gauss.a/header.pixel_increment_RA**2, gauss.b/header.pixel_increment_RA**2, gauss.theta]
-            #formatted_values = "\t".join(f"{value:<15.3e}" if (isinstance(value, float) and (abs(value) < 1e-2 or abs(value) >= 1e6)) else f"{value:<15.3f}"for value in gauss_temp)            
-            #logger.info(f"{index:<15}{formatted_values}")
+            #Code to print scaled components in log
             logger.info(f"{index:<15}{str(gauss)}")
 
-#Kolla så att det blir samma när man kör directroy och fil?
-class SourceModelAnalytical(SourceModel):
-    gauss_vec: GaussList()
-
-    def log_final_iteration(self, logger, gauss_fnd):
-        logger.info(f'{stars}FINAL{stars}\n')
-        logger.info(f"{'#':<15}{'Amplitude':<15}{'X0':<15}{'Y0':<15}{'a':<15}{'b':<15}"
-                     f"{'Rotation':<15}\n")
-
-        logger.info("Original components: \n")
-        for index, gauss in enumerate(self.gauss_vec):
-            logger.info(f"{index+1:<15} {str(gauss)}")
-
-        logger.info("Found components: \n")
-
+        logger.info("Found components scaled according to physical coordinate system: \n")
         for index, gauss in enumerate(gauss_fnd):
-            logger.info(f"{index+1:<15} {str(gauss)}")
+            gauss_temp = [gauss.amp,(gauss.x0 - header.reference_pixel_RA) * header.pixel_increment_RA,(gauss.y0 - header.reference_pixel_DEC) * header.pixel_increment_DEC ,gauss.a/header.pixel_increment_RA**2, gauss.b/header.pixel_increment_RA**2, gauss.theta]
+            formatted_values = "\t".join(f"{value:<15.3e}" if (isinstance(value, float) and (abs(value) < 1e-3 or abs(value) >= 1e6)) else f"{value:<15.5f}"for value in gauss_temp)            
+            logger.info(f"{index:<15}{formatted_values}")
+
+        logger.info("\n")

@@ -74,15 +74,7 @@ class Gaussian:
                 x2 * sin_2_theta - y2 * sin_2_theta - 2 * xy * cos_2_theta
                 ]
     
-    def get_fourier_transform_value(self, y,x, scale_factor=1):
-        x_bar = (x - scale_factor / 2) / scale_factor
-        y_bar = (y - scale_factor / 2) / scale_factor 
-
-        return self.amp * pi / sqrt(self.a * self.b) * exp(-2 * pi * 1j * (self.x0 * x_bar + self.y0 * y_bar)) * \
-            exp(-pi**2 * ((x_bar * cos(self.theta) + y_bar * sin(self.theta)) ** 2 / self.a + (y_bar * cos(self.theta) - x_bar * sin(self.theta)) ** 2 / self.b))
-    
-    
-    def get_gaussian_value_2(self,file_data):
+    def get_gaussian_value_scaled(self,file_data):
         """
         Returns value of gaussian for coordinates according to the fits files in ascention and declination
         """
@@ -104,7 +96,7 @@ class Gaussian:
 
         return self.amp * exp(-g)
 
-    def get_fourier_transform_value_2(self,file_data):
+    def get_fourier_transform_value(self,file_data):
         c = 3*10**8
         w = file_data.w
         u = file_data.u 
@@ -147,23 +139,29 @@ class GaussList:
             self.gaussians.extend(gaussian.gaussians)
         else:
             raise ValueError(f"tried to append {type(gaussian)} to GaussList")
-        
-    def build_image_2(self,file_data):
-        result = np.zeros((file_data.size,file_data.size))
-        for gauss in self.gaussians:
-            result = result + gauss.get_gaussian_value_2(file_data)
-
-        return result
     
+    """
+    Function for building images for gaussians when using image grid
+    """
     def build_image(self):
         return sum([np.fromfunction(gauss.get_gauss, (self.size, self.size), dtype=float) for gauss in self.gaussians])
+    
+    """
+    Function for building images for gaussians when using physical coordinate system of source
+    """
+    def build_image_scaled(self,file_data):
+        result = np.zeros((file_data.size,file_data.size))
+        for gauss in self.gaussians:
+            result = result + gauss.get_gaussian_value_scaled(file_data)
+
+        return result
     
     def get_analytical_results(self,gauss_fnd,file_data):
         anl2 = np.zeros_like(file_data.u,dtype=np.complex128)
         anl2_dV = np.zeros_like(file_data.v,dtype=np.complex128)
 
         for gauss in gauss_fnd:
-            visibility, dV = gauss.get_fourier_transform_value_2(file_data)
+            visibility, dV = gauss.get_fourier_transform_value(file_data)
             anl2 += visibility
             anl2_dV += dV
         

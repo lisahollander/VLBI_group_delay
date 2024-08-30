@@ -111,7 +111,7 @@ def model_several_sources(base_path):
                 file_data = FileData()
                 image = file_data.get_image_from_path(source_path) 
 
-                org, mdl, _, _, _, _,_,gauss_fnd = source_model.process(image,file_data)
+                org, mdl, _, _,_,gauss_fnd = source_model.process(image,file_data)
                 precision = source_model.precision(org, mdl)
 
                 data1 = [source_path, precision['mean error'],
@@ -123,7 +123,9 @@ def model_several_sources(base_path):
                 writer2.writerow([source_path])
                 for index, gauss in enumerate(gauss_fnd):
                     data2 = [f"Gauss #{index+1}", gauss.amp, gauss.x0, gauss.y0, 1/sqrt(gauss.a), 1/sqrt(gauss.b), gauss.theta]
+                    data3 = [f"Gauss Scaled #{index+1}", gauss.amp, gauss.delta_RA, gauss.delta_RA, 1/sqrt(gauss.a_scaled), 1/sqrt(gauss.b_scaled), gauss.theta]
                     writer2.writerow(data2)
+                    writer2.writerow(data3)
 
                 logger.info(f'{source_path} ok')
             except Exception as exc:
