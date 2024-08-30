@@ -4,30 +4,18 @@ import gzip
 import os
 import logging
 import logging.handlers
-import math
-
-from gauss import Gaussian, GaussList
-from numpy import radians, meshgrid,linspace,arange, empty,ndarray,pi,sqrt
-from astropy.io import fits
-from astropy.table import Table
-from constants import one_source1, one_source2, one_source3, one_source4, one_source5, one_source6, \
-    two_sources
 
 import csv
 from logging import getLogger
 from source_model import SourceModel
-import matplotlib.pyplot as plt
-from dataclasses import dataclass, field
-import numpy as np
-
-
+from read_file import FileData
+from numpy import sqrt
 
 """
 ##################################################
 Tools for logging 
 ##################################################
 """
-
 
 # Custom filter use to format records
 class ContextFilter(logging.Filter):
@@ -88,101 +76,6 @@ def time_it(func):
 
     return inner_fnc
 
-"""
-##################################################
-Data class for image data acquisition 
-##################################################
-"""
-
-@dataclass
-class Header:
-    grid_RA: ndarray = field(default_factory=lambda: np.array([]))
-    grid_DEC: ndarray = field(default_factory=lambda: np.array([]))
-    u : ndarray = field(default_factory=lambda: np.array([]))
-    v : ndarray = field(default_factory=lambda: np.array([]))
-    pixel_increment_RA: float = 0
-    pixel_increment_DEC: float = 0
-    reference_pixel_RA: float = 0
-    reference_pixel_DEC: float = 0
-    frequency: float = 0
-    w : float = 0
-    size: int = 0
-
-    def initialize_coord_system(self):
-        #Initializing x,y (RA,DEC) grid
-        ascStart =  -(self.reference_pixel_RA * self.pixel_increment_RA)
-        ascEnd =  (self.size - self.reference_pixel_RA) * self.pixel_increment_RA
-                
-        decStart = -(self.reference_pixel_DEC * self.pixel_increment_DEC)
-        decEnd =  (self.size - self.reference_pixel_DEC) * self.pixel_increment_DEC
-
-        right_ascension = arange(ascStart, ascEnd, self.pixel_increment_RA) 
-        declination = arange(decStart, decEnd, self.pixel_increment_DEC)
-
-        self.grid_RA, self.grid_DEC = meshgrid(right_ascension, declination)
-
-        increment_size = 2*6371000/self.size
-
-        uStart = -(self.reference_pixel_RA * increment_size)
-        uEnd =  (self.size - self.reference_pixel_RA) * increment_size
-
-        vStart = -(self.reference_pixel_RA * increment_size)
-        vEnd =  (self.size - self.reference_pixel_RA) * increment_size
-
-        u = arange(uStart,uEnd, increment_size) 
-        v = arange(vStart,vEnd, increment_size)  
-        self.u, self.v = meshgrid(u,v)
-
-
-    def get_image_from_path_2(self,source_path):
-        with fits.open(source_path) as data:
-            image = data[0].data
-            image.shape = image.shape[2:]
-
-            header_file = data[0].header
-            
-            self.reference_pixel_RA = header_file['CRPIX1']
-            self.reference_pixel_DEC = header_file['CRPIX2']
-            self.pixel_increment_RA = abs(header_file['CDELT1'])
-            self.pixel_increment_DEC = abs(header_file['CDELT2'])
-            print('Pixel in degrees', self.pixel_increment_RA, self.pixel_increment_DEC)
-            self.frequency = header_file['CRVAL3']
-            self.size = header_file['NAXIS1']
-            self.w = 2 * pi * self.frequency 
-            self.wavelength = 3*10**8 / self.frequency
-
-            clean_components = Table(data[1].data).to_pandas() 
-            clean_components['X'] = (clean_components['DELTAX'] / self.pixel_increment_RA + self.reference_pixel_RA)
-            clean_components['Y'] = (clean_components['DELTAY'] / self.pixel_increment_DEC + self.reference_pixel_DEC)
-
-            for i in range(len(clean_components['X'])):
-                if clean_components['X'][i] >= self.size:
-                    clean_components['X'][i] = clean_components['X'][i] - 1
-                    
-                if clean_components['Y'][i] >= self.size:
-                    clean_components['Y'][i] = clean_components['Y'][i] - 1
-
-            self.pixel_increment_RA = self.pixel_increment_RA * pi/180
-            self.pixel_increment_DEC = self.pixel_increment_DEC * pi/180
-
-            self.initialize_coord_system()
-
-        return image,clean_components
-
-def check_if_test_source(source_path):
-    test_sources = {'1': one_source1, '2': one_source2, '3': one_source3, '4': one_source4, '5': one_source5,
-                    '6': one_source6, '7': two_sources}
-    if source_path in test_sources:
-        source_path = test_sources[source_path]
-    return source_path
-
-
-def get_image_from_path(source_path):
-    image = fits.getdata(source_path, ext=0)
-    image.shape = image.shape[2:]
-
-    return image
-
 
 """
 ##################################################
@@ -190,7 +83,6 @@ Tools for running and logging several files
 ##################################################
 """
 
-#TO DO: Fix this part of the code after implementation 
 def model_several_sources(base_path):
     """
     Model several sources by providing the directory path to where they are located. Will create two .csv files.
@@ -216,15 +108,10 @@ def model_several_sources(base_path):
         for index, source_path in enumerate([os.path.join(path, name)
                                              for path, _, files in os.walk(base_path) for name in files if name.endswith('map.fits')], 1):
             try:
-                header = Header()
-                image,_ = header.get_image_from_path_2(source_path) 
-                radius_earth = 6378.1*10**3
-                diameter_earth = 12756000
-                u = np.linspace(-diameter_earth,diameter_earth, header.size)
-                v = np.linspace(-diameter_earth,diameter_earth, header.size) 
-                U, V = np.meshgrid(u,v)
+                file_data = FileData()
+                image = file_data.get_image_from_path(source_path) 
 
-                org, mdl, _, gauss_fnd = source_model.process(image,header,U,V)
+                org, mdl, _, _,_,gauss_fnd = source_model.process(image,file_data)
                 precision = source_model.precision(org, mdl)
 
                 data1 = [source_path, precision['mean error'],
@@ -236,7 +123,9 @@ def model_several_sources(base_path):
                 writer2.writerow([source_path])
                 for index, gauss in enumerate(gauss_fnd):
                     data2 = [f"Gauss #{index+1}", gauss.amp, gauss.x0, gauss.y0, 1/sqrt(gauss.a), 1/sqrt(gauss.b), gauss.theta]
+                    data3 = [f"Gauss Scaled #{index+1}", gauss.amp, gauss.delta_RA, gauss.delta_RA, 1/sqrt(gauss.a_scaled), 1/sqrt(gauss.b_scaled), gauss.theta]
                     writer2.writerow(data2)
+                    writer2.writerow(data3)
 
                 logger.info(f'{source_path} ok')
             except Exception as exc:

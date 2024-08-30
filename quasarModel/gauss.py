@@ -74,27 +74,19 @@ class Gaussian:
                 x2 * sin_2_theta - y2 * sin_2_theta - 2 * xy * cos_2_theta
                 ]
     
-    def get_fourier_transform_value(self, y,x, scale_factor=1):
-        x_bar = (x - scale_factor / 2) / scale_factor
-        y_bar = (y - scale_factor / 2) / scale_factor 
-
-        return self.amp * pi / sqrt(self.a * self.b) * exp(-2 * pi * 1j * (self.x0 * x_bar + self.y0 * y_bar)) * \
-            exp(-pi**2 * ((x_bar * cos(self.theta) + y_bar * sin(self.theta)) ** 2 / self.a + (y_bar * cos(self.theta) - x_bar * sin(self.theta)) ** 2 / self.b))
-    
-    
-    def get_gaussian_value_2(self,header):
+    def get_gaussian_value_scaled(self,file_data):
         """
         Returns value of gaussian for coordinates according to the fits files in ascention and declination
         """
         cos_2_theta, sin_2_theta = cos(2 * (self.theta)), sin(2 * self.theta)
 
-        self.delta_RA = (self.x0 - header.reference_pixel_RA) * header.pixel_increment_RA          
-        self.delta_DEC = (self.y0 - header.reference_pixel_DEC) * header.pixel_increment_DEC       
+        self.delta_RA = (self.x0 - file_data.reference_pixel_RA) * file_data.pixel_increment_RA          
+        self.delta_DEC = (self.y0 - file_data.reference_pixel_DEC) * file_data.pixel_increment_DEC       
 
-        x2, y2, xy = (header.grid_RA - self.delta_RA)**2, (header.grid_DEC - self.delta_DEC)**2, (header.grid_DEC - self.delta_DEC) * (header.grid_RA - self.delta_RA)
+        x2, y2, xy = (file_data.grid_RA - self.delta_RA)**2, (file_data.grid_DEC - self.delta_DEC)**2, (file_data.grid_DEC - self.delta_DEC) * (file_data.grid_RA - self.delta_RA)
 
-        self.a_scaled = self.a / header.pixel_increment_RA**2            # Note: We assume pixel increment is the same for a and b, pixel_increment_RA = pixel_increment_DEC
-        self.b_scaled = self.b / header.pixel_increment_DEC**2           # Note: We assume pixel increment is the same for a and b, pixel_increment_RA = pixel_increment_DEC
+        self.a_scaled = self.a / file_data.pixel_increment_RA**2            # Note: We assume pixel increment is the same for a and b, pixel_increment_RA = pixel_increment_DEC
+        self.b_scaled = self.b / file_data.pixel_increment_DEC**2           # Note: We assume pixel increment is the same for a and b, pixel_increment_RA = pixel_increment_DEC
 
         a_term = x2 * (1.0 + cos_2_theta) / 2 + y2 * (1.0 - cos_2_theta) / 2 + xy * sin_2_theta 
         b_term = x2 * (1.0 - cos_2_theta) / 2 + y2 * (1.0 + cos_2_theta) / 2 - xy * sin_2_theta
@@ -104,14 +96,16 @@ class Gaussian:
 
         return self.amp * exp(-g)
 
-    def get_fourier_transform_value_2(self,U,V,header):
+    def get_fourier_transform_value(self,file_data):
         c = 3*10**8
-        w = header.w
+        w = file_data.w
+        u = file_data.u 
+        v = file_data.v
 
         A = self.amp * pi / sqrt(self.a_scaled * self.b_scaled) 
 
-        dTheta= 1/c * (self.delta_RA * U + self.delta_DEC * V)
-        dExp = w/c**2 * ((U * cos(self.theta) + V * sin(self.theta))**2/(4*self.a_scaled) + (V * cos(self.theta) - U * sin(self.theta))** 2/(4*self.b_scaled)) 
+        dTheta= 1/c * (self.delta_RA * u + self.delta_DEC * v)
+        dExp = w/c**2 * ((u * cos(self.theta) + v * sin(self.theta))**2/(4*self.a_scaled) + (v * cos(self.theta) - u * sin(self.theta))** 2/(4*self.b_scaled)) 
 
         visibility = A * exp(-1j* w * dTheta) * exp(-w * dExp)
         dV = visibility * (-1j * dTheta - 2*dExp)
@@ -145,23 +139,29 @@ class GaussList:
             self.gaussians.extend(gaussian.gaussians)
         else:
             raise ValueError(f"tried to append {type(gaussian)} to GaussList")
-        
-    def build_image_2(self,header):
-        result = np.zeros((header.size,header.size))
-        for gauss in self.gaussians:
-            result = result + gauss.get_gaussian_value_2(header)
-
-        return result
     
+    """
+    Function for building images for gaussians when using image grid
+    """
     def build_image(self):
         return sum([np.fromfunction(gauss.get_gauss, (self.size, self.size), dtype=float) for gauss in self.gaussians])
     
-    def get_analytical_results(self,U,V,gauss_fnd,header):
-        anl2 = np.zeros_like(U,dtype=np.complex128)
-        anl2_dV = np.zeros_like(U,dtype=np.complex128)
+    """
+    Function for building images for gaussians when using physical coordinate system of source
+    """
+    def build_image_scaled(self,file_data):
+        result = np.zeros((file_data.size,file_data.size))
+        for gauss in self.gaussians:
+            result = result + gauss.get_gaussian_value_scaled(file_data)
+
+        return result
+    
+    def get_analytical_results(self,gauss_fnd,file_data):
+        anl2 = np.zeros_like(file_data.u,dtype=np.complex128)
+        anl2_dV = np.zeros_like(file_data.v,dtype=np.complex128)
 
         for gauss in gauss_fnd:
-            visibility, dV = gauss.get_fourier_transform_value_2(U,V,header)
+            visibility, dV = gauss.get_fourier_transform_value(file_data)
             anl2 += visibility
             anl2_dV += dV
         

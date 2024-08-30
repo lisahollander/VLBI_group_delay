@@ -4,16 +4,22 @@ from tkinter import filedialog
 from tkinter import END
 from tkinter import messagebox
 from tkinter import ttk
+from tkinter.filedialog import asksaveasfile
+
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from source_model import SourceModel, SourceModelAnalytical
 from matplotlib.patches import Circle
 import numpy as np
-from tools import Header,set_logger
 import logging
-from tkinter.filedialog import asksaveasfile
-from clean import get_clean_results
-from plot import get_plot_dictionaries_gui,get_plot_dictionaries_gui_clean
+
+from read_file import FileData
+from source_model import SourceModel
+from plot import get_plot_dictionaries_gui
+
+
+"""
+Class for managing text output in GUI
+"""
 class TextHandler(logging.Handler):
 
     def __init__(self, text_widget):
@@ -31,14 +37,10 @@ class TextHandler(logging.Handler):
 
 class GUI(tk.Frame):
 
-    real_source = SourceModel()
-    analytical_source = SourceModelAnalytical()
-    right_click_menu = [[], ['Save log', 'Save images', 'About', 'Exit']]
-
     def __init__(self, root):
         tk.Frame.__init__(self, root)
         self.root = root
-        self.root.title("GUI UNDER CONSTRUCTION")
+        self.root.title("Source Model")
         self.root.config(bg="white")
 
         # Configure grid for expanding
@@ -52,7 +54,7 @@ class GUI(tk.Frame):
 
         # Create top frame
         self.top_frame = tk.Frame(self.root, width=600, height=50, bg='lightgray')
-        self.top_frame.grid(row=0, column=0, columnspan=10, padx=10, pady=5, sticky='ew')  # Remove 'ns'
+        self.top_frame.grid(row=0, column=0, columnspan=10, padx=10, pady=5, sticky='ew')
 
         # Create left_frame
         self.left_frame = tk.Frame(self.root, bg='lightgray')
@@ -86,17 +88,18 @@ class GUI(tk.Frame):
         self.third_option_radio.grid(row=0, column=2, padx=5, pady=0, sticky='nw')
 
         # Add label, entry, and buttons to left_frame
-        label2 = tk.Label(self.top_frame, text="Choose a file:", bg='lightgray')
-        label2.grid(row=1, column=0, padx=5, pady=5, sticky='nw')
+        label_file = tk.Label(self.top_frame, text="Choose a file:", bg='lightgray')
+        label_file.grid(row=1, column=0, padx=5, pady=5, sticky='nw')
 
-        # Add text entry box for file path
+        # Text entry box for file path
         self.entry = tk.Entry(self.top_frame, width=30)
         self.entry.grid(row=1, column=1, padx=5, pady=5, sticky='nw')
 
-        # Add Browse button
+        # Browse button
         import_button = tk.Button(self.top_frame, text="Browse", command=self.import_file)
         import_button.grid(row=1, column=2, padx=5, pady=5, sticky='nw')
 
+        # Run button
         run_button = ttk.Button(self.top_frame, text="Run", command=self.Run)
         run_button.grid(row=1, column=3, padx=0, pady=5, sticky='nw')
 
@@ -111,10 +114,10 @@ class GUI(tk.Frame):
         self.canvas = FigureCanvasTkAgg(self.f, master=self.plot_frame)
         self.canvas.get_tk_widget().pack(side='right', fill='both', expand=1)
 
-        stop_button = ttk.Button(self.top_frame, text="Stop run", command=self.StopRun)
+        stop_button = ttk.Button(self.top_frame, text="Stop run", command=self.stop_run)
         stop_button.grid(row=1, column=4, padx=5, pady=5, sticky='W')
 
-        save_button = ttk.Button(self.left_frame, text="Save log", command=self.SaveLog)
+        save_button = ttk.Button(self.left_frame, text="Save log", command=self.save_log)
         save_button.grid(row=10, column=0, padx=5, pady=5, sticky='W')
 
         # Frame for buttons inside right_frame
@@ -122,8 +125,8 @@ class GUI(tk.Frame):
         self.button_frame.grid(row=0, column=5, padx=10, pady=5, sticky='ew')
 
         # Label above buttons
-        label = tk.Label(self.button_frame, text="View results:", bg='lightgray')
-        label.grid(row=2, column=5, padx=5, pady=5, sticky='s')
+        label_result = tk.Label(self.button_frame, text="View results:", bg='lightgray')
+        label_result.grid(row=2, column=5, padx=5, pady=5, sticky='s')
 
         # Add Analytical button
         analytical_button = ttk.Button(self.button_frame, text="Analytical", command=self.plot_analytical)
@@ -132,10 +135,6 @@ class GUI(tk.Frame):
         # Add Model button
         model_button = ttk.Button(self.button_frame, text="Model", command=self.plot_model)
         model_button.grid(row=2, column=7, padx=5, pady=5, sticky='s')
-
-        # Add Clean button
-        clean_button = ttk.Button(self.button_frame, text="Clean components", command=self.plot_clean)
-        clean_button.grid(row=2, column=8, padx=5, pady=5, sticky='s')
 
         # Add a Text widget for log messages to left_frame
         self.log_text = tk.Text(self.left_frame, wrap='word', state='disabled', bg='white', height=10)
@@ -148,6 +147,9 @@ class GUI(tk.Frame):
         self.logger.setLevel(logging.INFO)
         self.logger.addHandler(text_handler)
 
+    """
+    Function for running GUI
+    """
     def Run(self):
         filePath = self.entry.get()
 
@@ -155,15 +157,13 @@ class GUI(tk.Frame):
         self.logger.info(f"Running analysis on file: {filePath}")
         try:
 
-            header = Header()
-            image, clean_components = header.get_image_from_path_2(filePath) 
-            clean_visibility, dclean_visibility = get_clean_results(clean_components,header, header.u,header.v)
+            file_data = FileData()
+            image = file_data.get_image_from_path(filePath) 
                 
             source = SourceModel()
-            org, mdl, anl, mdl2, anl2, anlDerivative,residuals,_ = source.process(image,header)
+            org, mdl, anl, anlDerivative,residuals,_ = source.process(image,file_data)
 
-            self.plot_dict_mdl, self.plot_dict_anl = get_plot_dictionaries_gui(header, org, mdl2, anl2, anlDerivative,residuals)
-            self.plot_dict_clean = get_plot_dictionaries_gui_clean(header, org, mdl2, clean_visibility, dclean_visibility)
+            self.plot_dict_mdl, self.plot_dict_anl = get_plot_dictionaries_gui(file_data, org, mdl, anl, anlDerivative,residuals)
 
             self.logger.info("Analysis completed successfully.")
             self.logger.info("Figures generated and displayed.")
@@ -177,17 +177,6 @@ class GUI(tk.Frame):
             self.logger.error("Could not open the file.")
             messagebox.showerror("Error", "Could not open the file.")
 
-    def plot_analytical(self):
-        self.make_figures(self.plot_dict_anl)
-
-
-    def plot_clean(self):
-        self.make_figures(self.plot_dict_clean)
-
-    # Method to plot model results
-    def plot_model(self):
-        self.make_figures(self.plot_dict_mdl)
-
     """
     Function for creating plots for gui
     """
@@ -196,9 +185,9 @@ class GUI(tk.Frame):
         if not plot_dict or not plot_dict['data']:
             return
     
-        self.f.clf()                            #Clear current figure
-        num_images = len(plot_dict['data'])     #Number of images 
-        num_cols = 2                            # Fixed number of columns (2)
+        self.f.clf()                                        # Clear current figure
+        num_images = len(plot_dict['data'])                 # Number of images 
+        num_cols = 2                                        # Fixed number of columns (2)
         num_rows = (num_images + num_cols - 1) // num_cols  # Number of rows based on total images
 
         axes = self.f.subplots(num_rows, num_cols)
@@ -226,9 +215,6 @@ class GUI(tk.Frame):
         # Update the canvas to display the plots
         self.f.tight_layout(pad=3.0)
         self.canvas.draw()
-
-    def StopRun(self):
-        self.root.destroy() 
     
     def update_entry_state(self):
         file_type = self.file_option.get()
@@ -237,8 +223,8 @@ class GUI(tk.Frame):
         elif file_type == "repo":
             self.entry.config(state='readonly')  # Make entry read-only for repo path
 
+   
     def import_file(self):
-
         if self.file_option.get() == "local":
             file_path = filedialog.askopenfilename(title="Select a file",filetypes=[("Fits files","*.fits"),("All files","*.*")])
             if file_path:
@@ -257,8 +243,20 @@ class GUI(tk.Frame):
                     self.entry.config(state='disabled')
             else:
                 messagebox.showerror("Error",f"Directory does not exist: {folder_path}")
+
+    """
+    Functions for events when pressing buttons in GUI
+    """
+    def plot_analytical(self):
+        self.make_figures(self.plot_dict_anl)
+
+    def plot_model(self):
+        self.make_figures(self.plot_dict_mdl)
+
+    def stop_run(self):
+        self.root.destroy() 
         
-    def SaveLog(self):
+    def save_log(self):
         file = asksaveasfile(initialfile='Untitled.txt',
                                      defaultextension=".txt", filetypes=[("All Files", "*.*"),
                                                                          ("Text Documents", "*.txt")])
