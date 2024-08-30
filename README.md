@@ -2,29 +2,23 @@
 Summer internship project for NVI inc
 
 ## Downloading the Program
-Downloading via pip is possible with 
-
-```bash
-pip install QuasarModel
-```
-
-and gives easy access to the special classes to build your own programs with. However, if you want to run the finished program with the gui or from the terminal it's better to download the github repository and then installing the requirements. 
+Download the github repository and then install the requirements. 
 
 ```bash
 git clone https://github.com/lisahollander/VLBI_group_delay.git
-pip install -r QuasarModel/requirements.txt
+pip install -r VLBI_group_delay/requirements.txt
 ```
 
 ## Running the Program
-The program can run from an editor or from the terminal. When running the
-program from an editor, run the `__main__.py` file if you want to run the GUI. If not, use the terminal to run the script and specify the fits file you would like to run. 
+The program was constructed using visual studio code, but it can run from any editor or from the terminal. When running the
+program from an editor, run the `__main__.py` file if you want to run the GUI. If not, use the terminal to run the script.
 
-Example for using the terminal, not the GUI (Note: You must be in the quasarModel directory for this command)
+Example for using the terminal with a fits file from the fits folder (Note: You must be in the quasarModel directory for this command)
 ```bash
 python quasarModel -r fits/fits_files/J0004-4736/J0004-4736_S_2017_07_17_pet_map.fits
 ```
 
-Example for using the terminal with the sourcss predefined in constants.py (Note: You must be in the QuasarModel directory for this)
+Example for using the terminal with the sourcss predefined in constants.py, this can be useful if you want to run the script quickly (Note: You must be in the QuasarModel directory for this)
 ```bash
 python quasarModel -r 1
 ```
